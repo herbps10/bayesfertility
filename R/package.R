@@ -4,3 +4,5 @@
 #' @family help
 #' @importFrom instantiate stan_package_model
 NULL
+
+`%||%` <- function(a, b) if (is.null(a)) b else a

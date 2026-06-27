@@ -4,7 +4,15 @@
 \alias{pk_fit}
 \title{Fit the Peristera-Kostaki Model}
 \usage{
-pk_fit(data, births, exposure, age, effects = pk_effects(), ...)
+pk_fit(
+  data,
+  births,
+  exposure,
+  age,
+  effects = pk_effects(),
+  sample_prior = c("no", "yes", "only"),
+  ...
+)
 }
 \arguments{
 \item{data}{data frame}

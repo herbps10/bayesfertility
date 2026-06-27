@@ -8,3 +8,4 @@ inst/stan/**
 inst/stan/**/*.exe
 inst/stan/**/*.EXE
 *.dll
+.positai

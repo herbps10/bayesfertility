@@ -32,7 +32,7 @@ predict.pk_fit <- function(
 
   if (type == "asfr") {
     age_values <- resolve_age(age, newdata, object)
-    draws <- compute_asfr_draws(object, newdata, age_values)
+    draws <- compute_asfr_draws(object, newdata, age_values, source)
     draws <- maybe_subsample_draws(draws, ndraws)
 
     if (summarize) {
@@ -208,8 +208,8 @@ build_prediction_matrix <- function(
 #'
 #' @return n_draws x n_rows matrix of ASFR draws
 #' @noRd
-compute_asfr_draws <- function(fit, newdata, age_values) {
-  eta <- compute_eta_draws(fit, newdata)
+compute_asfr_draws <- function(fit, newdata, age_values, source) {
+  eta <- compute_eta_draws(fit, newdata, source)
   params <- eta_to_params(eta)
 
   age_mat <- matrix(

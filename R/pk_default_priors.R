@@ -22,15 +22,6 @@ pk_default_prior_scales <- function(param_name) {
       sigma2 = 0.3
     ),
     smooth = NULL
-    #smooth = switch(
-    #  param_name,
-    #  c1 = 0.5,
-    #  c2 = 0.5,
-    #  mu1 = 0.7,
-    #  mu2 = 0.2,
-    #  sigma1 = 0.15,
-    #  sigma2 = 0.2
-    #)
   )
 }
 

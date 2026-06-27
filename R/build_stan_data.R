@@ -47,6 +47,13 @@ build_stan_data <- function(processed, data, births, exposure, age) {
     n_pen <- length(pp$penalties)
     stan_data[[paste0("n_penalties_", p)]] <- n_pen
 
+    pen_is_re <- vapply(
+      pp$penalties,
+      function(e) as.integer(e$is_re),
+      integer(1)
+    )
+    stan_data[[paste0("penalty_is_re_", p)]] <- pen_is_re
+
     if (n_pen > 0) {
       pen_sizes <- vapply(
         pp$penalties,

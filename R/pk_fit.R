@@ -50,17 +50,33 @@ pk_fit <- function(
       centers
     }
 
+    z_size <- function(n_pen, sizes) {
+      if (n_pen == 0) 0 else sum(sizes)
+    }
+
     function() {
       list(
-        beta_c1 = array(expand_centers(processed$c1), dim = stan_data$P_c1),
-        beta_c2 = array(expand_centers(processed$c2), dim = stan_data$P_c2),
-        beta_mu1 = array(expand_centers(processed$mu1), dim = stan_data$P_mu1),
-        beta_mu2 = array(expand_centers(processed$mu2), dim = stan_data$P_mu2),
-        beta_sigma1 = array(
+        beta_c1_raw = array(
+          expand_centers(processed$c1),
+          dim = stan_data$P_c1
+        ),
+        beta_c2_raw = array(
+          expand_centers(processed$c2),
+          dim = stan_data$P_c2
+        ),
+        beta_mu1_raw = array(
+          expand_centers(processed$mu1),
+          dim = stan_data$P_mu1
+        ),
+        beta_mu2_raw = array(
+          expand_centers(processed$mu2),
+          dim = stan_data$P_mu2
+        ),
+        beta_sigma1_raw = array(
           expand_centers(processed$sigma1),
           dim = stan_data$P_sigma1
         ),
-        beta_sigma2 = array(
+        beta_sigma2_raw = array(
           expand_centers(processed$sigma2),
           dim = stan_data$P_sigma2
         ),
@@ -69,7 +85,32 @@ pk_fit <- function(
         tau_mu1 = rep(0.3, stan_data$n_penalties_mu1),
         tau_mu2 = rep(0.3, stan_data$n_penalties_mu2),
         tau_sigma1 = rep(0.3, stan_data$n_penalties_sigma1),
-        tau_sigma2 = rep(0.3, stan_data$n_penalties_sigma2)
+        tau_sigma2 = rep(0.3, stan_data$n_penalties_sigma2),
+
+        z_c1 = rep(
+          0,
+          z_size(stan_data$n_penalties_c1, stan_data$penalty_sizes_c1)
+        ),
+        z_c2 = rep(
+          0,
+          z_size(stan_data$n_penalties_c2, stan_data$penalty_sizes_c2)
+        ),
+        z_mu1 = rep(
+          0,
+          z_size(stan_data$n_penalties_mu1, stan_data$penalty_sizes_mu1)
+        ),
+        z_mu2 = rep(
+          0,
+          z_size(stan_data$n_penalties_mu2, stan_data$penalty_sizes_mu2)
+        ),
+        z_sigma1 = rep(
+          0,
+          z_size(stan_data$n_penalties_sigma1, stan_data$penalty_sizes_sigma1)
+        ),
+        z_sigma2 = rep(
+          0,
+          z_size(stan_data$n_penalties_sigma2, stan_data$penalty_sizes_sigma2)
+        )
       )
     }
   }

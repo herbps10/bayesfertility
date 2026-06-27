@@ -1,3 +1,55 @@
+#' Process formulas in a pk_effects specification
+#'
+#' @param effects output of pk_effects()
+#' @param data data frame
+#'
+#' @noRd
+process_effects <- function(effects, data) {
+  param_names <- c("c1", "c2", "mu1", "mu2", "sigma1", "sigma2")
+
+  processed <- lapply(param_names, function(p) {
+    tryCatch(
+      process_formula(effects[[p]], data),
+      error = function(e) {
+        stop(sprintf(
+          "Error processing formula for parameter '%s': %s",
+          p,
+          conditionMessage(e)
+        ))
+      }
+    )
+  })
+  names(processed) <- param_names
+
+  user_scales <- effects$prior_scales %||%
+    setNames(replicate(6, list(), simplify = FALSE), param_names)
+  user_centers <- effects$prior_centers %||%
+    setNames(replicate(6, list(), simplify = FALSE), param_names)
+  user_tau_priors <- effects$tau_priors %||%
+    setNames(replicate(6, list(), simplify = FALSE), param_names)
+
+  for (p in param_names) {
+    resolved <- resolve_priors(
+      terms_info = processed[[p]]$terms_info,
+      user_scales = user_scales[[p]] %||% list(),
+      user_centers = user_centers[[p]] %||% list(),
+      param_name = p
+    )
+    processed[[p]]$prior_scales <- resolved$scales
+    processed[[p]]$prior_centers <- resolved$centers
+
+    # Per-penalty tau priors
+    processed[[p]]$tau_scales <- resolve_tau_priors(
+      terms_info = processed[[p]]$terms_info,
+      n_penalties = length(processed[[p]]$penalties),
+      user_tau_priors = user_tau_priors[[p]] %||% list(),
+      param_name = p
+    )
+  }
+
+  processed
+}
+
 #' Build a list of parametric terms from a model matrix and formula
 #'
 #' @param X model matrix (with "assign" attribute) or design matrix from jagam
@@ -27,7 +79,6 @@ extract_parametric_terms <- function(X, terms_obj) {
   # Group column indices by term
   split(seq_along(asgn), factor(col_term, levels = unique(col_term)))
 }
-
 
 
 #' Resolve prior scales and centers per term, given user overrides and defaults
@@ -134,57 +185,6 @@ resolve_tau_priors <- function(
   resolved_scales
 }
 
-#' Process formulas in a pk_effects specification
-#'
-#' @param effects output of pk_effects()
-#' @param data data frame
-#'
-#' @noRd
-process_effects <- function(effects, data) {
-  param_names <- c("c1", "c2", "mu1", "mu2", "sigma1", "sigma2")
-
-  processed <- lapply(param_names, function(p) {
-    tryCatch(
-      process_formula(effects[[p]], data),
-      error = function(e) {
-        stop(sprintf(
-          "Error processing formula for parameter '%s': %s",
-          p,
-          conditionMessage(e)
-        ))
-      }
-    )
-  })
-  names(processed) <- param_names
-
-  user_scales <- effects$prior_scales %||%
-    setNames(replicate(6, list(), simplify = FALSE), param_names)
-  user_centers <- effects$prior_centers %||%
-    setNames(replicate(6, list(), simplify = FALSE), param_names)
-  user_tau_priors <- effects$tau_priors %||%
-    setNames(replicate(6, list(), simplify = FALSE), param_names)
-
-  for (p in param_names) {
-    resolved <- resolve_priors(
-      terms_info = processed[[p]]$terms_info,
-      user_scales = user_scales[[p]] %||% list(),
-      user_centers = user_centers[[p]] %||% list(),
-      param_name = p
-    )
-    processed[[p]]$prior_scales <- resolved$scales
-    processed[[p]]$prior_centers <- resolved$centers
-
-    # Per-penalty tau priors
-    processed[[p]]$tau_scales <- resolve_tau_priors(
-      terms_info = processed[[p]]$terms_info,
-      n_penalties = length(processed[[p]]$penalties),
-      user_tau_priors = user_tau_priors[[p]] %||% list(),
-      param_name = p
-    )
-  }
-
-  processed
-}
 
 #' Process a single formula into design + penalty matrices
 #'
@@ -269,12 +269,14 @@ process_formula <- function(formula, data) {
 
       if (!is.null(sm$S) && length(sm$S) > 0) {
         for (p in seq_along(sm$S)) {
+          is_re <- inherits(sm, "random.effect")
           penalties[[length(penalties) + 1]] <- list(
             S = sm$S[[p]],
             col_idx = idx,
             smooth_idx = k,
             penalty_idx = p,
-            smooth_label = sm$label
+            smooth_label = sm$label,
+            is_re = is_re
           )
           pen_indices_for_smooth <- c(pen_indices_for_smooth, length(penalties))
         }

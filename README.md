@@ -1,4 +1,8 @@
 # bayesfertility
+<!-- badges: start -->
+[![R-CMD-check](https://github.com/herbps10/bayesfertility/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/herbps10/bayesfertility/actions/workflows/R-CMD-check.yaml)
+<!-- badges: end -->
+
 R package for Bayesian fertility models.
 
 ## Installation

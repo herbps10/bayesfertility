@@ -20,6 +20,7 @@ jobs:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
       NOT_CRAN: true
       R_KEEP_PKG_SOURCE: yes
+      CMDSTAN_VERSION: '2.39.0'
 
     steps:
       - uses: actions/checkout@v3
@@ -33,12 +34,29 @@ jobs:
           http-user-agent: ${{ matrix.config.http-user-agent }}
           use-public-rspm: true
 
-      - name: Install CmdStan
+      - name: Install cmdstanr
         shell: Rscript {0}
         run: |
           install.packages("cmdstanr", repos = c("https://mc-stan.org/r-packages/", getOption("repos")))
           cmdstanr::check_cmdstan_toolchain(fix = TRUE)
-          cmdstanr::install_cmdstan()
+
+      # CmdStan itself (compiling the Stan Math C++ library) is by far the
+      # slowest part of this workflow. Cache the built toolchain, keyed on a
+      # pinned version, so unchanged runs skip rebuilding it entirely.
+      - name: Cache CmdStan
+        uses: actions/cache@v4
+        with:
+          path: ~/.cmdstan
+          key: cmdstan-${{ runner.os }}-${{ env.CMDSTAN_VERSION }}
+
+      - name: Install CmdStan
+        shell: Rscript {0}
+        run: |
+          cmdstanr::install_cmdstan(
+            version = Sys.getenv("CMDSTAN_VERSION"),
+            cores = parallel::detectCores(),
+            overwrite = FALSE
+          )
 
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:

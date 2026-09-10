@@ -188,6 +188,7 @@ pp_check_ribbon <- function(
           ymax = .upper
           #fill = .data[[group]]
         ),
+        fill = "#3F7EBA",
         alpha = 0.2
       ) +
       ggplot2::geom_line(
@@ -196,7 +197,8 @@ pp_check_ribbon <- function(
           x = age,
           y = .fitted,
           #color = .data[[group]]
-        )
+        ),
+        color = "#3F7EBA"
       ) +
       ggplot2::geom_errorbar(
         data = obs_summary,
@@ -207,7 +209,7 @@ pp_check_ribbon <- function(
           #color = .data[[group]]
         ),
         width = 0,
-        alpha = 0.6
+        alpha = 0.5
       ) +
       ggplot2::geom_point(
         data = obs_summary,

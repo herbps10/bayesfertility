@@ -6,7 +6,7 @@ posterior_tfr <- function(
   newdata = NULL,
   age_range = c(15, 49),
   age_step = 0.5,
-  source = c("prior", "posterior"),
+  source = c("posterior", "prior"),
   summarize = TRUE,
   conf.level = 0.95,
   ndraws = NULL,

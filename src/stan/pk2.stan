@@ -224,6 +224,7 @@ transformed parameters {
     schedule[i] = pk2(
       ages[age[i]],
       exp(eta_c1[i]),
+      //0.1 * inv_logit(eta_c1[i]) * exp(eta_c2[i]),
       exp(eta_c2[i]),
       eta_mu1[i],
       eta_mu1[i] + exp(eta_d_mu2[i]),

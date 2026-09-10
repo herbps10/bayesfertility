@@ -15,25 +15,55 @@ pk_prior_posterior(
 )
 }
 \arguments{
-\item{object}{a pk_fit object.
-Must have been fit with with \code{sample_prior = "yes"} or \code{sample_prior = "only"}.}
+\item{object}{A fitted \code{pk_fit} object. Must have been fit with
+\code{sample_prior = "yes"} or \code{sample_prior = "only"} so that prior draws are
+available.}
 
-\item{type}{which quantity to compare: "coefficients" (individual beta_k[j]),
-"tau" (smoothness hyperparameters), "schedule_params" (constrained-scale
-schedule parameters at a cell), or "tfr" (TFR at a covariate grid)}
+\item{type}{Which quantity to compare: \code{"coefficients"}, \code{"tau"},
+\code{"schedule_params"}, or \code{"tfr"} (see Description).}
 
-\item{parameter}{which schedule parameter(s) to include. NULL means all.}
+\item{parameter}{Character vector of schedule parameter names (a subset of
+\code{"c1"}, \code{"c2"}, \code{"mu1"}, \code{"mu2"}, \code{"sigma1"}, \code{"sigma2"}) to include.
+\code{NULL} (default) includes all six. Ignored when \code{type = "tfr"}.}
 
-\item{newdata}{for \code{type = "schedule_params"} or \code{type = "tfr"}: where
-to evaluate.}
+\item{terms}{Only used when \code{type = "coefficients"}. Character vector of
+term labels (as they appear in the model's design matrix, e.g.
+\code{"(Intercept)"}, \code{"race"}) to include for each selected parameter. \code{NULL}
+(default) includes every term.}
 
-\item{ndraws}{optional; subsample draws for speed.}
+\item{newdata}{Only used when \code{type = "schedule_params"} or \code{type = "tfr"}:
+a data frame of covariate values at which to evaluate the comparison.
+Defaults to the distinct covariate combinations in the training data if
+\code{NULL}.}
 
-\item{...}{reserved for future use.}
+\item{ndraws}{Optional number of draws to randomly subsample from each of
+the prior and posterior draws (for plotting speed); \code{NULL} (default)
+uses all available draws.}
+
+\item{...}{Reserved for future use; currently unused.}
 }
 \value{
-a ggplot object
+A \code{ggplot} object comparing prior and posterior densities, faceted
+by coefficient, parameter, penalty term, or cell depending on \code{type}.
 }
 \description{
-Plot prior vs. posterior for diagnostic comparison
+Builds a faceted density plot comparing prior and posterior draws for a
+chosen quantity, as a quick check of how much the data have updated each
+part of the model. Four kinds of comparison can be requested via \code{type}:
+\itemize{
+\item \code{"coefficients"}: individual regression coefficients (\code{beta}) on their
+working scale, one facet per coefficient.
+\item \code{"tau"}: smoothness/random-effect hyperparameters (\code{tau}), one facet per
+penalty term.
+\item \code{"schedule_params"}: the six schedule parameters (\code{c1}, \code{c2}, \code{mu1},
+\code{mu2}, \code{sigma1}, \code{sigma2}) on their natural scale, evaluated at \code{newdata}.
+\item \code{"tfr"}: total fertility rate, evaluated at \code{newdata}.
+}
+}
+\examples{
+\dontrun{
+pk_prior_posterior(fit, type = "coefficients")
+pk_prior_posterior(fit, type = "tfr", newdata = pred_levels)
+}
+
 }

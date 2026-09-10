@@ -2,10 +2,21 @@
 % Please edit documentation in R/pk_effects.R
 \name{print.pk_effects}
 \alias{print.pk_effects}
-\title{Print a pk_effects object}
+\title{Print a pk_effects specification}
 \usage{
 \method{print}{pk_effects}(x, ...)
 }
+\arguments{
+\item{x}{A \code{pk_effects} object, as returned by \code{\link[=pk_effects]{pk_effects()}}.}
+
+\item{...}{Additional arguments, currently unused.}
+}
+\value{
+Invisibly returns \code{x}. Called for its side effect of printing to
+the console.
+}
 \description{
-Print a pk_effects object
+Prints the per-parameter formulas in a \code{pk_effects} object, plus a summary
+of any prior customizations (\code{prior_scales}, \code{prior_centers}, \code{tau_priors})
+that override the package defaults.
 }

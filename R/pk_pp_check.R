@@ -82,6 +82,11 @@ pp_check.pk_fit <- function(
   )
 }
 
+#' Resolve a `stat` argument to a function
+#'
+#' @param stat a function, or a character name of one (e.g. "mean")
+#'
+#' @return a function
 #' @noRd
 resolve_stat <- function(stat) {
   if (is.function(stat)) {
@@ -96,12 +101,30 @@ resolve_stat <- function(stat) {
   cli::cli_abort("{.arg stat} must be a function or a character name of one.")
 }
 
+#' Posterior predictive check via a single summary statistic
+#'
+#' @param y_obs numeric vector of observed values
+#' @param yrep `n_draws` x `length(y_obs)` matrix of posterior predictive draws
+#' @param stat a function, or a character name of one (e.g. "mean")
+#' @param ... additional arguments passed to `bayesplot::ppc_stat()`
+#'
+#' @return a ggplot object
 #' @noRd
 pp_check_stat <- function(y_obs, yrep, stat, ...) {
   stat_fn <- resolve_stat(stat)
   bayesplot::ppc_stat(y_obs, yrep, stat = stat_fn, ...)
 }
 
+#' Posterior predictive check via a summary statistic, computed within groups
+#'
+#' @param y_obs numeric vector of observed values
+#' @param yrep `n_draws` x `length(y_obs)` matrix of posterior predictive draws
+#' @param newdata data frame containing the grouping column named by `group`
+#' @param group column name in `newdata` to group by
+#' @param stat a function, or a character name of one (e.g. "mean")
+#' @param ... additional arguments passed to `bayesplot::ppc_stat_grouped()`
+#'
+#' @return a ggplot object
 #' @noRd
 pp_check_stat_grouped <- function(y_obs, yrep, newdata, group, stat, ...) {
   if (is.null(group)) {
@@ -122,6 +145,23 @@ pp_check_stat_grouped <- function(y_obs, yrep, newdata, group, stat, ...) {
   )
 }
 
+#' Posterior predictive check: observed ASFRs vs. the fitted schedule ribbon
+#'
+#' @param object a `pk_fit` object
+#' @param newdata data frame of observations to overlay (must include the
+#'   fit's age, births, and exposure columns, and any covariates in `group`)
+#' @param yrep `n_draws` x `nrow(newdata)` matrix of posterior predictive
+#'   draws of births, used to compute the observed-rate interval
+#' @param source "posterior" (default) or "prior"; which draws to use for the
+#'   fitted schedule curve
+#' @param group optional column name in `newdata` to facet by
+#' @param conf.level credible interval width
+#' @param age_grid numeric vector of ages at which to evaluate the fitted
+#'   schedule curve; defaults to `seq(15, 49, by = 0.5)`
+#' @param ... unused
+#'
+#' @return a ggplot object showing the fitted schedule curve (with credible
+#'   ribbon) and observed ASFRs (with their own interval, from `yrep`)
 #' @noRd
 pp_check_ribbon <- function(
   object,

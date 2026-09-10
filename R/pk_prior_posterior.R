@@ -1,17 +1,47 @@
 #' Plot prior vs. posterior for diagnostic comparison
 #'
-#' @param object a pk_fit object.
-#'   Must have been fit with with \code{sample_prior = "yes"} or \code{sample_prior = "only"}.
-#' @param type which quantity to compare: "coefficients" (individual beta_k[j]),
-#'   "tau" (smoothness hyperparameters), "schedule_params" (constrained-scale
-#'   schedule parameters at a cell), or "tfr" (TFR at a covariate grid)
-#' @param parameter which schedule parameter(s) to include. NULL means all.
-#' @param newdata for \code{type = "schedule_params"} or \code{type = "tfr"}: where
-#'   to evaluate.
-#' @param ndraws optional; subsample draws for speed.
-#' @param ... reserved for future use.
+#' @description
+#' Builds a faceted density plot comparing prior and posterior draws for a
+#' chosen quantity, as a quick check of how much the data have updated each
+#' part of the model. Four kinds of comparison can be requested via `type`:
+#' * `"coefficients"`: individual regression coefficients (`beta`) on their
+#'   working scale, one facet per coefficient.
+#' * `"tau"`: smoothness/random-effect hyperparameters (`tau`), one facet per
+#'   penalty term.
+#' * `"schedule_params"`: the six schedule parameters (`c1`, `c2`, `mu1`,
+#'   `mu2`, `sigma1`, `sigma2`) on their natural scale, evaluated at `newdata`.
+#' * `"tfr"`: total fertility rate, evaluated at `newdata`.
 #'
-#' @return a ggplot object
+#' @param object A fitted `pk_fit` object. Must have been fit with
+#'   `sample_prior = "yes"` or `sample_prior = "only"` so that prior draws are
+#'   available.
+#' @param type Which quantity to compare: `"coefficients"`, `"tau"`,
+#'   `"schedule_params"`, or `"tfr"` (see Description).
+#' @param parameter Character vector of schedule parameter names (a subset of
+#'   `"c1"`, `"c2"`, `"mu1"`, `"mu2"`, `"sigma1"`, `"sigma2"`) to include.
+#'   `NULL` (default) includes all six. Ignored when `type = "tfr"`.
+#' @param terms Only used when `type = "coefficients"`. Character vector of
+#'   term labels (as they appear in the model's design matrix, e.g.
+#'   `"(Intercept)"`, `"race"`) to include for each selected parameter. `NULL`
+#'   (default) includes every term.
+#' @param newdata Only used when `type = "schedule_params"` or `type = "tfr"`:
+#'   a data frame of covariate values at which to evaluate the comparison.
+#'   Defaults to the distinct covariate combinations in the training data if
+#'   `NULL`.
+#' @param ndraws Optional number of draws to randomly subsample from each of
+#'   the prior and posterior draws (for plotting speed); `NULL` (default)
+#'   uses all available draws.
+#' @param ... Reserved for future use; currently unused.
+#'
+#' @return A `ggplot` object comparing prior and posterior densities, faceted
+#'   by coefficient, parameter, penalty term, or cell depending on `type`.
+#'
+#' @examples
+#' \dontrun{
+#' pk_prior_posterior(fit, type = "coefficients")
+#' pk_prior_posterior(fit, type = "tfr", newdata = pred_levels)
+#' }
+#'
 #' @export
 pk_prior_posterior <- function(
   object,
@@ -39,6 +69,12 @@ pk_prior_posterior <- function(
   )
 }
 
+#' Assert that a pk_fit object has prior draws available
+#'
+#' @param object a `pk_fit` object
+#'
+#' @return invisibly returns `object`; called for its side effect of
+#'   aborting if `object$prior_fit` is `NULL`
 #' @noRd
 require_prior_samples <- function(object) {
   checkmate::assert_class(object, "pk_fit")
@@ -52,6 +88,16 @@ require_prior_samples <- function(object) {
   invisible(object)
 }
 
+#' Stack a prior and posterior draws matrix into one long-format tibble
+#'
+#' @param prior_mat n_draws x n_cols matrix of prior draws
+#' @param post_mat n_draws x n_cols matrix of posterior draws (same columns
+#'   as `prior_mat`)
+#' @param column_labels optional character vector of column labels; defaults
+#'   to `colnames(prior_mat)`, or `"V1", "V2", ...` if unnamed
+#'
+#' @return a tibble with columns `source` ("prior"/"posterior"), `column`,
+#'   and `value`, with `nrow(prior_mat) + nrow(post_mat)` rows per column
 #' @noRd
 pair_to_long <- function(prior_mat, post_mat, column_labels = NULL) {
   if (is.null(column_labels)) {
@@ -76,6 +122,15 @@ pair_to_long <- function(prior_mat, post_mat, column_labels = NULL) {
   )
 }
 
+#' Plot faceted prior vs. posterior densities from a long-format tibble
+#'
+#' @param long_df tibble with columns `value`, `source` ("prior"/"posterior"),
+#'   and a faceting column named by `facet_var`
+#' @param facet_var column name in `long_df` to facet by
+#' @param scales `scales` argument passed to `ggplot2::facet_wrap()`
+#' @param title optional plot title
+#'
+#' @return a ggplot object
 #' @noRd
 plot_prior_posterior_density <- function(
   long_df,
@@ -98,6 +153,16 @@ plot_prior_posterior_density <- function(
 }
 
 
+#' Build the prior-vs-posterior plot for `pk_prior_posterior(type = "coefficients")`
+#'
+#' @param object a `pk_fit` object
+#' @param parameter character vector of schedule parameter names to include,
+#'   or NULL for all six
+#' @param terms character vector of term labels to include for each selected
+#'   parameter, or NULL for all terms
+#' @param ndraws optional number of draws to subsample per source
+#'
+#' @return a ggplot object, faceted by coefficient
 #' @noRd
 plot_pp_coefficients <- function(object, parameter, terms, ndraws) {
   param_names <- c("c1", "c2", "mu1", "mu2", "sigma1", "sigma2")
@@ -195,6 +260,16 @@ plot_pp_coefficients <- function(object, parameter, terms, ndraws) {
 }
 
 
+#' Build the prior-vs-posterior plot for `pk_prior_posterior(type = "schedule_params")`
+#'
+#' @param object a `pk_fit` object
+#' @param newdata data frame of covariate values to evaluate at; defaults to
+#'   the distinct training cells (via `unique_cells()`) if NULL
+#' @param parameter character vector of schedule parameter names to include,
+#'   or NULL for all six
+#' @param ndraws optional number of draws to subsample per source
+#'
+#' @return a ggplot object, faceted by schedule parameter
 #' @noRd
 plot_pp_schedule_params <- function(object, newdata, parameter, ndraws) {
   if (is.null(newdata)) {
@@ -248,6 +323,16 @@ plot_pp_schedule_params <- function(object, newdata, parameter, ndraws) {
   )
 }
 
+#' Build the prior-vs-posterior plot for `pk_prior_posterior(type = "tfr")`
+#'
+#' @param object a `pk_fit` object
+#' @param newdata data frame of covariate values to evaluate TFR at; defaults
+#'   to the distinct training cells (via `unique_cells()`) if NULL
+#' @param ndraws optional number of draws to subsample per source
+#' @param age_range length-2 numeric vector, age bounds to integrate over
+#' @param age_step spacing of the age grid used for integration
+#'
+#' @return a ggplot object, faceted by cell
 #' @noRd
 plot_pp_tfr <- function(
   object,
@@ -313,6 +398,15 @@ plot_pp_tfr <- function(
   )
 }
 
+#' Build the prior-vs-posterior plot for `pk_prior_posterior(type = "tau")`
+#'
+#' @param object a `pk_fit` object
+#' @param parameter character vector of schedule parameter names to include,
+#'   or NULL for all six
+#' @param ndraws optional number of draws to subsample per source
+#'
+#' @return a ggplot object, faceted by penalty term. Errors if none of the
+#'   selected parameters have any penalized (smooth/random-effect) terms
 #' @noRd
 plot_pp_tau <- function(object, parameter, ndraws) {
   param_names <- c("c1", "c2", "mu1", "mu2", "sigma1", "sigma2")

@@ -1,3 +1,11 @@
+#' Randomly subsample rows (draws) from a draws matrix
+#'
+#' @param draws_mat n_draws x n_cols matrix
+#' @param ndraws number of draws to keep, or NULL to keep all
+#'
+#' @return `draws_mat`, subsampled to `ndraws` rows if `ndraws` is not NULL
+#'   and smaller than `nrow(draws_mat)`
+#' @noRd
 maybe_subsample_draws <- function(draws_mat, ndraws) {
   if (is.null(ndraws) || ndraws >= nrow(draws_mat)) {
     return(draws_mat)
@@ -6,6 +14,16 @@ maybe_subsample_draws <- function(draws_mat, ndraws) {
   draws_mat[idx, , drop = FALSE]
 }
 
+#' Randomly subsample rows (draws) from each matrix in a list, using the same
+#' subsample indices for every element
+#'
+#' @param draws_list named list of n_draws x n_cols matrices, all sharing the
+#'   same number of rows
+#' @param ndraws number of draws to keep, or NULL to keep all
+#'
+#' @return `draws_list`, with every matrix subsampled to the same `ndraws`
+#'   rows if `ndraws` is not NULL and smaller than the number of draws
+#' @noRd
 maybe_subsample_draws_list <- function(draws_list, ndraws) {
   if (is.null(ndraws)) {
     return(draws_list)
@@ -19,6 +37,14 @@ maybe_subsample_draws_list <- function(draws_list, ndraws) {
   lapply(draws_list, function(mat) mat[idx, , drop = FALSE])
 }
 
+#' Summarize a draws matrix into per-column point estimates and an interval
+#'
+#' @param draws_mat n_draws x n_cols matrix
+#' @param conf.level credible interval width
+#'
+#' @return a tibble with one row per column of `draws_mat` and columns
+#'   `.fitted` (mean), `.median`, `.lower`, `.upper`
+#' @noRd
 summarize_draws_matrix <- function(draws_mat, conf.level = 0.95) {
   alpha <- (1 - conf.level) / 2
   tibble::tibble(
@@ -29,6 +55,16 @@ summarize_draws_matrix <- function(draws_mat, conf.level = 0.95) {
   )
 }
 
+#' Summarize each matrix in a named list into per-column point estimates and
+#' an interval, with columns prefixed by list name
+#'
+#' @param draws_list named list of n_draws x n_cols matrices (e.g. one per
+#'   schedule parameter)
+#' @param conf.level credible interval width
+#'
+#' @return a tibble with one row per column of each matrix in `draws_list`
+#'   and, for each list element `nm`, columns `<nm>.fitted`, `<nm>.median`,
+#'   `<nm>.lower`, `<nm>.upper`
 #' @importFrom matrixStats colMeans2 colMedians colQuantiles
 #' @importFrom dplyr bind_cols
 #' @noRd
@@ -86,6 +122,12 @@ summarize_curve_draws <- function(
 
 
 #' Deduplicate training data based on variables that appear in any of the effects formulas
+#'
+#' @param object a `pk_fit` object
+#'
+#' @return a data frame of distinct covariate combinations ("cells") found in
+#'   `object$data`, restricted to the variables referenced in `object$effects`
+#'   (excluding `object$age_col`)
 #' @importFrom dplyr distinct
 #' @noRd
 unique_cells <- function(object) {

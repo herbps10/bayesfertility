@@ -15,16 +15,125 @@ pk_fit(
 )
 }
 \arguments{
-\item{data}{data frame}
+\item{data}{A data frame containing the columns named by \code{births},
+\code{exposure}, and \code{age}, plus any covariates referenced in \code{effects}.}
 
-\item{births}{column name of number of births}
+\item{births}{String giving the name of the column in \code{data} holding
+observed birth counts (the Poisson response).}
 
-\item{exposure}{column name of exposure}
+\item{exposure}{String giving the name of the column in \code{data} holding
+exposure (person-time at risk) for each row.}
 
-\item{age}{column name of age}
+\item{age}{String giving the name of the column in \code{data} holding age.}
 
-\item{effects}{model specification, specify via \code{pk_effects()}}
+\item{effects}{Model specification, created via \code{pk_effects()},
+giving a formula for each of the six PK schedule parameters (\code{c1}, \code{c2},
+\code{mu1}, \code{mu2}, \code{sigma1}, \code{sigma2}) plus any prior customizations. Defaults
+to intercept-only formulas for all six parameters.}
+
+\item{sample_prior}{One of \code{"no"} (default; only fit the posterior),
+\code{"yes"} (fit both the posterior and, separately, the prior with the
+likelihood disabled), or \code{"only"} (fit only the prior).}
+
+\item{...}{Additional arguments passed on to cmdstanr's
+\code{CmdStanModel$sample()} method (e.g. \code{chains}, \code{iter_warmup},
+\code{iter_sampling}, \code{parallel_chains}, \code{seed}), used for both the posterior
+and, when requested, the prior fit.}
+}
+\value{
+An object of class \code{pk_fit}, a list containing:
+\describe{
+\item{fit}{The posterior \code{CmdStanMCMC} fit object, or \code{NULL} if
+\code{sample_prior = "only"}.}
+\item{prior_fit}{The prior \code{CmdStanMCMC} fit object (likelihood
+disabled), or \code{NULL} if \code{sample_prior = "no"}.}
+\item{processed}{Per-schedule-parameter design matrices, penalty
+matrices, and resolved priors produced by \code{process_effects()}.}
+\item{beta_draws, tau_draws}{Named lists (one entry per schedule
+parameter) of posterior draws for the coefficients and smoothing
+hyperparameters, or \code{NULL} if no posterior fit was run.}
+\item{prior_beta_draws, prior_tau_draws}{The corresponding prior
+draws, or \code{NULL} if no prior fit was run.}
+\item{sample_prior}{The \code{sample_prior} argument as supplied.}
+\item{data}{The original \code{data} argument, used as the default
+\code{newdata} in downstream methods such as \code{predict.pk_fit()}.}
+\item{effects}{The \code{pk_effects} object as supplied.}
+\item{age_col, births_col, exposure_col}{The \code{age}, \code{births}, and
+\code{exposure} column-name strings as supplied.}
+\item{diagnostics}{A list with \code{max_rhat}, \code{min_ess}, and
+\code{n_divergent} summarizing convergence of the posterior fit, or
+\code{NULL} if no posterior fit was run.}
+}
 }
 \description{
-Fit the Peristera-Kostaki Model
+The Peristera-Kostaki (PK) model is a parametric model of
+age-specific fertility rates. The model has a two-component parametric schedule
+in which each "hump" is governed by an
+amplitude, a location (age), and a width:
+\deqn{ASFR(age) = c_1 \exp(-((age - \mu_1)/\sigma_1)^2) +
+  c_2 \exp(-((age - \mu_2)/\sigma_2)^2)}
+Observed births are modeled as Poisson counts with rate
+\code{exposure * ASFR(age)}. Each of the six schedule parameters (\code{c1}, \code{c2},
+\code{mu1}, \code{mu2}, \code{sigma1}, \code{sigma2}) can depend on covariates via a formula
+supplied through \code{pk_effects()}, including smooth/random-effect terms,
+which are fit with partial pooling via Stan.
+}
+\details{
+Model fitting is delegated to a pre-compiled Stan model (\code{pk2.stan}) via
+\pkg{cmdstanr}. When \code{sample_prior} requests it, the model is fit twice:
+once with the likelihood enabled (the posterior fit) and once with the
+likelihood switched off (the prior fit, useful for prior predictive checks
+and prior/posterior comparisons via \code{pk_prior_posterior()}).
+}
+\examples{
+\dontrun{
+# `data` is typically pre-aggregated: one row per age (and, if `effects`
+# includes covariates, per age/covariate combination), giving weighted
+# birth counts and exposure, e.g.:
+#   data |>
+#     dplyr::group_by(age, race) |>
+#     dplyr::summarize(
+#       births = sum(weight * fert),
+#       exposure = sum(weight)
+#     )
+
+# Fit a single national schedule (intercept-only for every parameter)
+national_fit <- pk_fit(
+  data,
+  "births",
+  "exposure",
+  "age",
+  effects = pk_effects(),
+  sample_prior = "yes",
+  chains = 4,
+  parallel_chains = 4,
+  iter_warmup = 500,
+  iter_sampling = 500,
+  adapt_delta = 0.999,
+  max_treedepth = 14
+)
+
+# Let every schedule parameter vary by a covariate such as race
+race_fit <- pk_fit(
+  data,
+  "births",
+  "exposure",
+  "age",
+  effects = pk_effects(
+    c1 = ~1 + race,
+    c2 = ~1 + race,
+    mu1 = ~1 + race,
+    mu2 = ~1 + race,
+    sigma1 = ~1 + race,
+    sigma2 = ~1 + race
+  ),
+  sample_prior = "yes",
+  parallel_chains = 4
+)
+
+# Downstream: predicted schedules/parameters and total fertility rate
+predict(national_fit, type = "schedule_curve")
+posterior_tfr(national_fit)
+}
+
 }

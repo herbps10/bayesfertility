@@ -1,3 +1,71 @@
+#' Predict fertility schedule quantities from a fitted PK model
+#'
+#' @description
+#' Computes model-implied quantities from a fitted \code{pk_fit} object at a
+#' set of covariate values, using posterior (or prior) draws. Four kinds of
+#' quantity can be requested via `type`:
+#' \itemize{
+#'   \item `"asfr"`: the age-specific fertility rate at specific (row, age)
+#'     combinations in `newdata`.
+#'   \item `"linear_predictor"`: the working-scale linear predictor `eta` for
+#'     each of the six schedule parameters (`c1`, `c2`, `mu1`, `mu2`,
+#'     `sigma1`, `sigma2`), one value per row of `newdata`.
+#'   \item `"schedule_params"`: the same six schedule parameters transformed
+#'     back to their natural scale (see \code{pk_effects()} for the
+#'     working-scale transforms), one value per row of `newdata`.
+#'   \item `"schedule_curve"`: the full fertility schedule evaluated over
+#'     `age_grid`, for each distinct covariate combination ("cell") implied
+#'     by `newdata`.
+#' }
+#'
+#' @param object A fitted `pk_fit` object, as returned by \code{pk_fit()}.
+#' @param newdata A data frame giving the covariate values to predict at
+#'   (and, for `type = "asfr"`, ages as well, unless `age` is supplied
+#'   separately). Defaults to the training data (`object$data`) if `NULL`.
+#' @param type One of `"asfr"`, `"schedule_params"`, `"linear_predictor"`, or
+#'   `"schedule_curve"` (see Description).
+#' @param source Whether to predict from `"posterior"` (default) or `"prior"`
+#'   draws; `"prior"` requires the fit to have been created with
+#'   `sample_prior = "yes"` or `"only"`.
+#' @param age Only used when `type = "asfr"`. One of `NULL` (use the age
+#'   column named in `object$age_col`, looked up in `newdata`), a string
+#'   naming a column of `newdata` to use as age, or a numeric vector of ages
+#'   with length `nrow(newdata)`.
+#' @param age_grid Only used when `type = "schedule_curve"`. A numeric vector
+#'   of ages at which to evaluate the schedule; defaults to `seq(15, 49, by = 1)`.
+#' @param summarize If `TRUE` (default), collapse draws into a point estimate
+#'   (mean and median) and a `conf.level` credible interval. If `FALSE`,
+#'   return the raw draws.
+#' @param conf.level Credible interval width used when `summarize = TRUE`.
+#' @param ndraws Optional number of draws to randomly subsample before
+#'   summarizing or returning; `NULL` (default) uses all available draws.
+#' @param ... Unused; present for S3 method consistency.
+#'
+#' @return The shape depends on `type` and `summarize`:
+#'   \describe{
+#'     \item{`type = "asfr"`}{If `summarize`, a tibble with one row per row of
+#'       `newdata` and columns `.fitted`, `.median`, `.lower`, `.upper`. If
+#'       not, an `n_draws` x `nrow(newdata)` matrix of ASFR draws.}
+#'     \item{`type = "linear_predictor"` or `"schedule_params"`}{If
+#'       `summarize`, a tibble with one row per row of `newdata` and, for each
+#'       of the six schedule parameters, columns named
+#'       `<parameter>.fitted`/`.median`/`.lower`/`.upper`. If not, a named
+#'       list (one element per schedule parameter) of `n_draws` x
+#'       `nrow(newdata)` matrices.}
+#'     \item{`type = "schedule_curve"`}{If `summarize`, a long-format tibble
+#'       with one row per (cell, age) combination, including the covariate
+#'       columns from `newdata`, `age`, and `.fitted`/`.median`/`.lower`/
+#'       `.upper`. If not, an `n_draws` x `n_cells` x `n_ages` array (with
+#'       `age_grid` values as the third dimension's names).}
+#'   }
+#'
+#' @examples
+#' \dontrun{
+#' predict(fit, type = "asfr")
+#' predict(fit, newdata = pred_levels, type = "schedule_params")
+#' predict(fit, type = "schedule_curve", conf.level = 0.95)
+#' }
+#'
 #' @export
 predict.pk_fit <- function(
   object,
@@ -90,6 +158,10 @@ predict.pk_fit <- function(
 
 #' Compute working-scale linear predictors for all 6 schedule parameters
 #'
+#' @param fit a `pk_fit` object
+#' @param newdata data frame of covariate values to predict at
+#' @param source "posterior" (default) or "prior"; which beta draws to use
+#'
 #' @return a named list with elements c1, c2, mu1, mu2, sigma1, sigma2. Each
 #'   is an n_draws x n_rows matrix of draws on the working scale
 #'
@@ -136,6 +208,12 @@ compute_eta_draws <- function(fit, newdata, source = c("posterior", "prior")) {
 
 #' Convert eta from working scale to parameter scale
 #'
+#' @param eta output of `compute_eta_draws()`: a named list with elements
+#'   c1, c2, mu1, mu2, sigma1, sigma2, each an n_draws x n_rows matrix
+#'
+#' @return a named list of the same shape as `eta`, with each schedule
+#'   parameter transformed to its natural scale (exponentiated for c1/c2/
+#'   sigma1/sigma2; mu1 unchanged; mu2 as `mu1 + exp(eta$mu2)`)
 #' @noRd
 eta_to_params <- function(eta) {
   mu1 <- eta$mu1
@@ -206,6 +284,12 @@ build_prediction_matrix <- function(
 
 #' Compute ASFR posterior draws at a set of (cell, age) combinations
 #'
+#' @param fit a `pk_fit` object
+#' @param newdata data frame of covariate values, one row per cell
+#' @param age_values numeric vector of ages, length `nrow(newdata)`, giving
+#'   the age to evaluate ASFR at for each row of `newdata`
+#' @param source "posterior" or "prior"; which draws to use
+#'
 #' @return n_draws x n_rows matrix of ASFR draws
 #' @noRd
 compute_asfr_draws <- function(fit, newdata, age_values, source) {
@@ -249,6 +333,15 @@ evaluate_schedule_grid <- function(params, age_grid) {
   result
 }
 
+#' Resolve the age values to use for prediction
+#'
+#' @param age NULL (use `object$age_col` looked up in `newdata`), a column
+#'   name in `newdata`, or a numeric vector of length `nrow(newdata)`
+#' @param newdata data frame to resolve age from
+#' @param object a `pk_fit` object
+#'
+#' @return a numeric vector of length `nrow(newdata)`
+#' @noRd
 resolve_age <- function(age, newdata, object) {
   # Resolve age values
   if (is.null(age)) {

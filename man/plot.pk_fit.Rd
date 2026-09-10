@@ -2,10 +2,20 @@
 % Please edit documentation in R/pk_plot.R
 \name{plot.pk_fit}
 \alias{plot.pk_fit}
-\title{Plot Peristera-Kostaki Model Fit Object}
+\title{Plot a fitted PK model}
 \usage{
 \method{plot}{pk_fit}(x)
 }
+\arguments{
+\item{x}{A fitted \code{pk_fit} object, as returned by \code{pk_fit()}.}
+}
+\value{
+\code{NULL}, invisibly.
+}
 \description{
-Plot Peristera-Kostaki Model Fit Object
+Intended to visualize a fitted \code{pk_fit} object (e.g. its fertility
+schedule curve and/or posterior diagnostics). Not yet implemented --- this
+method is currently a placeholder with an empty body and returns \code{NULL}.
+Use \code{predict.pk_fit()} with \code{type = "schedule_curve"} together with
+\pkg{ggplot2} directly, or \code{pk_prior_posterior()}, in the meantime.
 }

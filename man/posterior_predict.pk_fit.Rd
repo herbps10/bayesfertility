@@ -33,10 +33,10 @@ exposure column from the original fit}
 }
 \value{
 an n_draws x n_obs integer matrix of posterior predictive
-  draws of births
+draws of births
 }
 \description{
-For each posterior draw and each (cell, age) combination in `newdata`,
+For each posterior draw and each (cell, age) combination in \code{newdata},
 simulates an integer count from Poisson(exposure * ASFR) where ASFR is
 drawn from the posterior (or prior, if requested).
 }

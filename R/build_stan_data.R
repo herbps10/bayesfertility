@@ -4,6 +4,12 @@
 #' @param data the original data frame
 #' @param births,exposure,age column names
 #'
+#' @return a named list suitable as the `data` argument to the `pk2.stan`
+#'   model: age/count/exposure vectors, plus per-schedule-parameter design
+#'   matrices, term bookkeeping, and penalty/tau bookkeeping (see the
+#'   `P_<p>`, `X_<p>`, `n_terms_<p>`, `n_penalties_<p>`, etc. entries built
+#'   below for each schedule parameter `<p>`)
+#'
 #' @noRd
 build_stan_data <- function(processed, data, births, exposure, age) {
   param_names <- c("c1", "c2", "mu1", "mu2", "sigma1", "sigma2")

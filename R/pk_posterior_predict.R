@@ -66,6 +66,14 @@ posterior_predict.pk_fit <- function(
   yrep
 }
 
+#' Resolve the exposure values to use for prediction
+#'
+#' @param exposure NULL (use `object$exposure_col` looked up in `newdata`), a
+#'   column name in `newdata`, or a numeric vector of length `nrow(newdata)`
+#' @param newdata data frame to resolve exposure from
+#' @param object a `pk_fit` object
+#'
+#' @return a numeric vector of length `nrow(newdata)`
 #' @noRd
 resolve_exposure <- function(exposure, newdata, object) {
   if (is.null(exposure)) {

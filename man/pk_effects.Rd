@@ -17,29 +17,53 @@ pk_effects(
 )
 }
 \arguments{
-\item{c1, c2, mu1, mu2, sigma1, sigma2}{one-sided formulas specifying the
+\item{c1, c2, mu1, mu2, sigma1, sigma2}{One-sided formulas specifying the
 linear predictor for each Peristera-Kostaki schedule parameter on its
-working scale (log for c1/c2/sigma1/sigma2, identify for mu1,
+working scale (log for c1/c2/sigma1/sigma2, identity for mu1,
 log of the gap mu2-mu1 for mu2).}
 
-\item{prior_scales}{optional named list of prior scale overrides, keyed
-first by schedule parameter (e.g., "c1") and then by term name
-(e.g., "(Intercept)", "race", "s(province)"). Use `NULL` for a term
-to indicate "use the penalty-based prior only" (only meaningful for
+\item{prior_scales}{Optional named list of prior scale overrides, keyed
+first by schedule parameter (e.g., \code{"c1"}) and then by term name
+(e.g., \code{"(Intercept)"}, \code{"race"}, \code{"s(province)"}). Use \code{NULL} for a
+term to indicate "use the penalty-based prior only" (only meaningful for
 smooth/random-effect terms). Unspecified terms fall back to
 package defaults.}
 
-\item{prior_centers}{optional named list of prior center overrides,
-same structure as `prior_scales`. Non-intercept terms default to 0;
+\item{prior_centers}{Optional named list of prior center overrides,
+same structure as \code{prior_scales}. Non-intercept terms default to 0;
 intercepts default to demographically anchored values.}
 
-\item{tau_priors}{optional named list of smoothness-hyperparameter
-(tau) prior overrides, keyed first by schedule parameter (e.g., "c1")
-and then by smooth label (e.g., "s(province)"). Each entry is
-itself a list of parameters; currently only `scale` is supported,
+\item{tau_priors}{Optional named list of smoothness-hyperparameter
+(tau) prior overrides, keyed first by schedule parameter (e.g., \code{"c1"})
+and then by smooth label (e.g., \code{"s(province)"}). Each entry is
+itself a list of parameters; currently only \code{scale} is supported,
 controlling the scale of the half-Student-t(3, 0, scale) prior
 on tau. Unspecified smooths fall back to per-parameter defaults.}
 }
+\value{
+An object of class \code{pk_effects}: a list containing the six
+formulas (\code{c1}, \code{c2}, \code{mu1}, \code{mu2}, \code{sigma1}, \code{sigma2}) plus the
+validated \code{prior_scales}, \code{prior_centers}, and \code{tau_priors}, each
+normalized to a named list keyed by schedule parameter.
+}
 \description{
-Specify per-parameter formulas and prior customization for a PK model
+Builds the model specification passed as the \code{effects} argument to
+\code{pk_fit()}: a one-sided formula for each of the six Peristera-Kostaki
+schedule parameters, plus optional overrides of the default priors. Each
+formula can include ordinary parametric terms (factors, continuous
+covariates) as well as \pkg{mgcv}-style smooth/random-effect terms
+(\code{s()}, \code{te()}, etc.), which are fit with partial pooling via a
+smoothness hyperparameter (\code{tau}).
+}
+\examples{
+# Intercept-only for every schedule parameter (the default)
+pk_effects()
+
+# Let c1/c2 vary by a covariate, and override one prior scale
+pk_effects(
+  c1 = ~1 + race,
+  c2 = ~1 + race,
+  prior_scales = list(c1 = list(race = 0.5))
+)
+
 }

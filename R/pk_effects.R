@@ -1,24 +1,50 @@
 #' Specify per-parameter formulas and prior customization for a PK model
 #'
-#' @param c1,c2,mu1,mu2,sigma1,sigma2 one-sided formulas specifying the
+#' @description
+#' Builds the model specification passed as the `effects` argument to
+#' \code{pk_fit()}: a one-sided formula for each of the six Peristera-Kostaki
+#' schedule parameters, plus optional overrides of the default priors. Each
+#' formula can include ordinary parametric terms (factors, continuous
+#' covariates) as well as \pkg{mgcv}-style smooth/random-effect terms
+#' (`s()`, `te()`, etc.), which are fit with partial pooling via a
+#' smoothness hyperparameter (`tau`).
+#'
+#' @param c1,c2,mu1,mu2,sigma1,sigma2 One-sided formulas specifying the
 #'   linear predictor for each Peristera-Kostaki schedule parameter on its
-#'   working scale (log for c1/c2/sigma1/sigma2, identify for mu1,
+#'   working scale (log for c1/c2/sigma1/sigma2, identity for mu1,
 #'   log of the gap mu2-mu1 for mu2).
-#' @param prior_scales optional named list of prior scale overrides, keyed
-#'   first by schedule parameter (e.g., "c1") and then by term name
-#'   (e.g., "(Intercept)", "race", "s(province)"). Use `NULL` for a term
-#'   to indicate "use the penalty-based prior only" (only meaningful for
+#' @param prior_scales Optional named list of prior scale overrides, keyed
+#'   first by schedule parameter (e.g., `"c1"`) and then by term name
+#'   (e.g., `"(Intercept)"`, `"race"`, `"s(province)"`). Use `NULL` for a
+#'   term to indicate "use the penalty-based prior only" (only meaningful for
 #'   smooth/random-effect terms). Unspecified terms fall back to
 #'   package defaults.
-#' @param prior_centers optional named list of prior center overrides,
+#' @param prior_centers Optional named list of prior center overrides,
 #'   same structure as `prior_scales`. Non-intercept terms default to 0;
 #'   intercepts default to demographically anchored values.
-#' @param tau_priors optional named list of smoothness-hyperparameter
-#'   (tau) prior overrides, keyed first by schedule parameter (e.g., "c1")
-#'   and then by smooth label (e.g., "s(province)"). Each entry is
+#' @param tau_priors Optional named list of smoothness-hyperparameter
+#'   (tau) prior overrides, keyed first by schedule parameter (e.g., `"c1"`)
+#'   and then by smooth label (e.g., `"s(province)"`). Each entry is
 #'   itself a list of parameters; currently only `scale` is supported,
 #'   controlling the scale of the half-Student-t(3, 0, scale) prior
 #'   on tau. Unspecified smooths fall back to per-parameter defaults.
+#'
+#' @return An object of class `pk_effects`: a list containing the six
+#'   formulas (`c1`, `c2`, `mu1`, `mu2`, `sigma1`, `sigma2`) plus the
+#'   validated `prior_scales`, `prior_centers`, and `tau_priors`, each
+#'   normalized to a named list keyed by schedule parameter.
+#'
+#' @examples
+#' # Intercept-only for every schedule parameter (the default)
+#' pk_effects()
+#'
+#' # Let c1/c2 vary by a covariate, and override one prior scale
+#' pk_effects(
+#'   c1 = ~1 + race,
+#'   c2 = ~1 + race,
+#'   prior_scales = list(c1 = list(race = 0.5))
+#' )
+#'
 #' @export
 pk_effects <- function(
   c1 = ~1,
@@ -80,7 +106,16 @@ pk_effects <- function(
   )
 }
 
-#' Validate the structure of prior_scalecs or prior_centers
+#' Validate the structure of prior_scales or prior_centers
+#'
+#' @param spec user-supplied `prior_scales`/`prior_centers` argument, or NULL
+#' @param param_names character vector of valid schedule parameter names
+#' @param what "prior_scales" or "prior_centers" (used in error messages and
+#'   to select validation rules: scales must be non-negative, centers may be
+#'   any finite number)
+#'
+#' @return `spec` normalized to a named list with one (possibly empty) entry
+#'   per element of `param_names`
 #' @noRd
 validate_prior_spec <- function(spec, param_names, what) {
   # Return empty lists so downstream code can rely on consistent shape
@@ -145,6 +180,12 @@ validate_prior_spec <- function(spec, param_names, what) {
 
 #' Validate the structure of tau_priors
 #'
+#' @param spec user-supplied `tau_priors` argument, or NULL
+#' @param param_names character vector of valid schedule parameter names
+#'
+#' @return `spec` normalized to a named list with one (possibly empty) entry
+#'   per element of `param_names`, each in turn a named list keyed by smooth
+#'   label with a validated `scale` element
 #' @noRd
 validate_tau_priors <- function(spec, param_names) {
   supported_params <- c("scale")
@@ -212,7 +253,19 @@ validate_tau_priors <- function(spec, param_names) {
 }
 
 
-#' Print a pk_effects object
+#' Print a pk_effects specification
+#'
+#' @description
+#' Prints the per-parameter formulas in a `pk_effects` object, plus a summary
+#' of any prior customizations (`prior_scales`, `prior_centers`, `tau_priors`)
+#' that override the package defaults.
+#'
+#' @param x A `pk_effects` object, as returned by [pk_effects()].
+#' @param ... Additional arguments, currently unused.
+#'
+#' @return Invisibly returns `x`. Called for its side effect of printing to
+#'   the console.
+#'
 #' @export
 print.pk_effects <- function(x, ...) {
   param_names <- c("c1", "c2", "mu1", "mu2", "sigma1", "sigma2")

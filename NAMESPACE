@@ -6,6 +6,7 @@ S3method(pp_check,pk_fit)
 S3method(predict,pk_fit)
 S3method(print,pk_effects)
 S3method(print,pk_fit)
+export(pk_coef)
 export(pk_effects)
 export(pk_fit)
 export(pk_prior_posterior)
@@ -14,12 +15,16 @@ export(posterior_tfr)
 export(pp_check)
 import(ggplot2)
 importFrom(bayesplot,pp_check)
-importFrom(dplyr,bind_cols)
-importFrom(dplyr,distinct)
+importFrom(dplyr,
+  bind_cols,
+  distinct
+)
 importFrom(instantiate,stan_package_model)
-importFrom(matrixStats,colMeans2)
-importFrom(matrixStats,colMedians)
-importFrom(matrixStats,colQuantiles)
+importFrom(matrixStats,
+  colMeans2,
+  colMedians,
+  colQuantiles
+)
 importFrom(prettyunits,pretty_sec)
 importFrom(rstantools,posterior_predict)
 importFrom(stringr,str_replace)

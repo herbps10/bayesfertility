@@ -2,14 +2,14 @@
 % Please edit documentation in R/posterior_tfr.R
 \name{posterior_tfr}
 \alias{posterior_tfr}
-\title{Calculate posterior TFR}
+\title{Calculate the posterior total fertility rate (TFR)}
 \usage{
 posterior_tfr(
   object,
   newdata = NULL,
   age_range = c(15, 49),
   age_step = 0.5,
-  source = c("prior", "posterior"),
+  source = c("posterior", "prior"),
   summarize = TRUE,
   conf.level = 0.95,
   ndraws = NULL,
@@ -17,8 +17,52 @@ posterior_tfr(
 )
 }
 \arguments{
-\item{object}{object}
+\item{object}{A fitted \code{pk_fit} object, as returned by \code{pk_fit()}.}
+
+\item{newdata}{A data frame giving the covariate values ("cells") to
+compute TFR for. Defaults to the distinct covariate combinations implied
+by the model's effects formulas in the training data (see the internal
+\code{unique_cells()} helper) if \code{NULL}.}
+
+\item{age_range}{Length-2 numeric vector giving the lower and upper age
+bounds to integrate the schedule over. Defaults to \code{c(15, 49)}.}
+
+\item{age_step}{Spacing of the age grid used for the trapezoidal
+integration. Defaults to \code{0.5}.}
+
+\item{source}{Whether to compute TFR from \code{"posterior"} (default) or
+\code{"prior"} draws; \code{"prior"} requires the fit to have been created with
+\code{sample_prior = "yes"} or \code{"only"}.}
+
+\item{summarize}{If \code{TRUE} (default), collapse draws into a point estimate
+(mean and median) and a \code{conf.level} credible interval. If \code{FALSE},
+return the raw draws.}
+
+\item{conf.level}{Credible interval width used when \code{summarize = TRUE}.}
+
+\item{ndraws}{Optional number of draws to randomly subsample before
+computing TFR; \code{NULL} (default) uses all available draws.}
+
+\item{...}{Currently unused; accepted for interface consistency with
+\code{predict.pk_fit()}.}
+}
+\value{
+If \code{summarize}, a tibble with one row per row of \code{newdata},
+including its covariate columns plus \code{.fitted}, \code{.median}, \code{.lower}, and
+\code{.upper} giving the TFR estimate and its credible interval. If not, an
+\code{n_draws} x \code{nrow(newdata)} matrix of TFR draws.
 }
 \description{
-Calculate posterior TFR
+Computes the total fertility rate implied by a fitted PK model: the
+age-specific fertility rate (ASFR) schedule is evaluated on a grid over
+\code{age_range} spaced by \code{age_step} and integrated (via the trapezoidal rule)
+to give TFR, separately for each covariate combination ("cell") in
+\code{newdata}.
+}
+\examples{
+\dontrun{
+posterior_tfr(fit)
+posterior_tfr(fit, newdata = pred_levels, conf.level = 0.95)
+}
+
 }

@@ -3,6 +3,11 @@
 #' @param effects output of pk_effects()
 #' @param data data frame
 #'
+#' @return a named list (one entry per schedule parameter) of
+#'   `process_formula()` output, each augmented with resolved
+#'   `prior_scales`, `prior_centers` (from `resolve_priors()`), and
+#'   `tau_scales` (from `resolve_tau_priors()`)
+#'
 #' @noRd
 process_effects <- function(effects, data) {
   param_names <- c("c1", "c2", "mu1", "mu2", "sigma1", "sigma2")
@@ -53,9 +58,10 @@ process_effects <- function(effects, data) {
 #' Build a list of parametric terms from a model matrix and formula
 #'
 #' @param X model matrix (with "assign" attribute) or design matrix from jagam
-#' @param formula or pterms object the columns came from
+#' @param terms_obj the `terms()`/`pterms` object the columns of `X` came from
 #'
 #' @return named list: term label -> integer vector of column indices in X
+#' @noRd
 extract_parametric_terms <- function(X, terms_obj) {
   asgn <- attr(X, "assign")
 
@@ -82,6 +88,17 @@ extract_parametric_terms <- function(X, terms_obj) {
 
 
 #' Resolve prior scales and centers per term, given user overrides and defaults
+#'
+#' @param terms_info a parameter's `terms_info` list (from `build_terms_info()`)
+#' @param user_scales named list of user-supplied per-term scale overrides
+#'   for this schedule parameter (as in `pk_effects(prior_scales = ...)`)
+#' @param user_centers named list of user-supplied per-term center overrides
+#'   for this schedule parameter
+#' @param param_name one of "c1", "c2", "mu1", "mu2", "sigma1", "sigma2"
+#'
+#' @return a list with elements `scales` and `centers`, each a numeric vector
+#'   with one entry per element of `terms_info` (`NA` for smooth/random-effect
+#'   terms left to use the penalty-based prior only)
 #' @noRd
 resolve_priors <- function(terms_info, user_scales, user_centers, param_name) {
   available_terms <- vapply(terms_info, function(t) t$label, character(1))
@@ -141,6 +158,16 @@ resolve_priors <- function(terms_info, user_scales, user_centers, param_name) {
 }
 
 #' Resolve per-penalty tau prior scales from user overrides and defaults
+#'
+#' @param terms_info a parameter's `terms_info` list (from `build_terms_info()`)
+#' @param n_penalties number of penalty terms for this schedule parameter
+#' @param user_tau_priors named list of user-supplied per-smooth tau overrides
+#'   for this schedule parameter (as in `pk_effects(tau_priors = ...)`)
+#' @param param_name one of "c1", "c2", "mu1", "mu2", "sigma1", "sigma2"
+#'
+#' @return a numeric vector of length `n_penalties` giving the tau prior
+#'   scale for each penalty
+#' @noRd
 resolve_tau_priors <- function(
   terms_info,
   n_penalties,
@@ -344,12 +371,21 @@ process_formula <- function(formula, data) {
 
 #' Build a unified terms_info list combining parametric and smooth terms
 #'
+#' @param parametric_terms named list from `extract_parametric_terms()`:
+#'   term label -> integer vector of column indices
+#' @param smooth_labels character vector of smooth term labels
+#' @param smooth_col_idx list of integer vectors, one per smooth, giving the
+#'   columns of `X` belonging to that smooth
+#' @param smooth_penalty_idx list of integer vectors, one per smooth, giving
+#'   indices into the flat `penalties` list for that smooth
+#'
 #' @return a list with one element per logical term. Each element is a list:
 #'   - label:       character (e.g., "(Intercept)", "race", "s(province)")
 #'   - type:        "parametric" or "smooth"
 #'   - col_idx:     integer vector of columns in X belonging to this term
 #'   - penalty_idx: integer vector of indices into the flat `penalties` list
 #'                  (empty for parametric terms)
+#' @noRd
 build_terms_info <- function(
   parametric_terms,
   smooth_labels,
@@ -380,6 +416,12 @@ build_terms_info <- function(
 }
 
 
+#' Check whether a formula contains an mgcv-style smooth term
+#'
+#' @param formula a one-sided formula
+#'
+#' @return `TRUE` if any term label starts with `s(`, `te(`, `ti(`, or `t2(`
+#' @noRd
 formula_has_smooth <- function(formula) {
   term_labels <- attr(stats::terms(formula), "term.labels")
   if (length(term_labels) == 0) {

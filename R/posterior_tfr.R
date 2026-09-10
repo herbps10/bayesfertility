@@ -1,5 +1,44 @@
-#' Calculate posterior TFR
-#' @param object object
+#' Calculate the posterior total fertility rate (TFR)
+#'
+#' @description
+#' Computes the total fertility rate implied by a fitted PK model: the
+#' age-specific fertility rate (ASFR) schedule is evaluated on a grid over
+#' `age_range` spaced by `age_step` and integrated (via the trapezoidal rule)
+#' to give TFR, separately for each covariate combination ("cell") in
+#' `newdata`.
+#'
+#' @param object A fitted `pk_fit` object, as returned by \code{pk_fit()}.
+#' @param newdata A data frame giving the covariate values ("cells") to
+#'   compute TFR for. Defaults to the distinct covariate combinations implied
+#'   by the model's effects formulas in the training data (see the internal
+#'   `unique_cells()` helper) if `NULL`.
+#' @param age_range Length-2 numeric vector giving the lower and upper age
+#'   bounds to integrate the schedule over. Defaults to `c(15, 49)`.
+#' @param age_step Spacing of the age grid used for the trapezoidal
+#'   integration. Defaults to `0.5`.
+#' @param source Whether to compute TFR from `"posterior"` (default) or
+#'   `"prior"` draws; `"prior"` requires the fit to have been created with
+#'   `sample_prior = "yes"` or `"only"`.
+#' @param summarize If `TRUE` (default), collapse draws into a point estimate
+#'   (mean and median) and a `conf.level` credible interval. If `FALSE`,
+#'   return the raw draws.
+#' @param conf.level Credible interval width used when `summarize = TRUE`.
+#' @param ndraws Optional number of draws to randomly subsample before
+#'   computing TFR; `NULL` (default) uses all available draws.
+#' @param ... Currently unused; accepted for interface consistency with
+#'   \code{predict.pk_fit()}.
+#'
+#' @return If `summarize`, a tibble with one row per row of `newdata`,
+#'   including its covariate columns plus `.fitted`, `.median`, `.lower`, and
+#'   `.upper` giving the TFR estimate and its credible interval. If not, an
+#'   `n_draws` x `nrow(newdata)` matrix of TFR draws.
+#'
+#' @examples
+#' \dontrun{
+#' posterior_tfr(fit)
+#' posterior_tfr(fit, newdata = pred_levels, conf.level = 0.95)
+#' }
+#'
 #' @export
 posterior_tfr <- function(
   object,

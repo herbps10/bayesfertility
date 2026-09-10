@@ -1,12 +1,32 @@
 #' Extract posterior draws or summaries for a specific term
 #'
-#' @param fit a pk_fit object
-#' @param parameter one of "c1", "c2", "mu1", "mu2", "sigma1", "sigma2"
-#' @param term the term label
-#' @param summarize if TRUE, return a tibble of posterior summaries;
-#'   if FALSE, return the n_draws x n_coef matrix of draws
-#' @param source "posterior" (default) or "prior"
-#' @param conf.level credible interval width
+#' @description
+#' Extracts the working-scale regression coefficients for a single term of a
+#' single schedule parameter's formula (e.g. the `race` term of `c1`'s
+#' formula), either as raw draws or summarized with a point estimate and
+#' credible interval. For a term with multiple levels or basis columns (a
+#' factor, or a smooth/random-effect term), one column is returned per level.
+#'
+#' @param fit A fitted `pk_fit` object, as returned by \code{pk_fit()}.
+#' @param parameter One of `"c1"`, `"c2"`, `"mu1"`, `"mu2"`, `"sigma1"`,
+#'   `"sigma2"` — which schedule parameter's formula the term belongs to.
+#' @param term The term label to extract, as it appears in that parameter's
+#'   formula (e.g. `"(Intercept)"`, `"race"`, `"s(province)"`).
+#' @param summarize If `TRUE` (default), return a tibble of posterior
+#'   summaries; if `FALSE`, return the `n_draws` x `n_coef` matrix of draws.
+#' @param source `"posterior"` (default) or `"prior"`; `"prior"` requires the
+#'   fit to have been created with `sample_prior = "yes"` or `"only"`.
+#' @param conf.level Credible interval width used when `summarize = TRUE`.
+#'
+#' @return If `summarize`, a tibble with one row per level/column of `term`
+#'   and columns `level`, `mean`, `median`, `lower`, `upper`. If not, an
+#'   `n_draws` x `n_levels` matrix of draws, with columns named by level.
+#'
+#' @examples
+#' \dontrun{
+#' pk_coef(fit, parameter = "c1", term = "race")
+#' pk_coef(fit, parameter = "c1", term = "(Intercept)", summarize = FALSE)
+#' }
 #'
 #' @export
 pk_coef <- function(

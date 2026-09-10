@@ -1,3 +1,18 @@
+#' Print a fitted PK model
+#'
+#' @description
+#' Prints a human-readable summary of a \code{pk_fit} object: the per-parameter
+#' effects specification, the number of training observations, sampling
+#' metadata (chains, iterations, runtime), and posterior convergence
+#' diagnostics (max R-hat, min effective sample size, and number of divergent
+#' transitions), each flagged as passing or failing standard thresholds.
+#'
+#' @param x A fitted `pk_fit` object, as returned by \code{pk_fit()}.
+#' @param ... Additional arguments, currently unused.
+#'
+#' @return Invisibly returns `x`. Called for its side effect of printing to
+#'   the console.
+#'
 #' @importFrom stringr str_replace
 #' @importFrom prettyunits pretty_sec
 #' @export
@@ -32,7 +47,7 @@ print.pk_fit <- function(x, ...) {
 
   # Convergence diagnostics
   cli::cli_h3("Convergence")
-  diag <- fit$diagnostics
+  diag <- x$diagnostics
 
   rhat_ok <- !is.na(diag$max_rhat) && diag$max_rhat < 1.01
   ess_ok <- !is.na(diag$min_ess) && diag$min_ess > 400

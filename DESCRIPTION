@@ -13,13 +13,18 @@ Depends:
   R (>= 4.0.0)
 Imports:
   bayesplot,
+  checkmate,
+  cli,
+  cmdstanr,
   dplyr,
   ggplot2,
   instantiate,
   matrixStats,
+  mgcv,
   prettyunits,
   rstantools,
-  stringr
+  stringr,
+  tibble
 Additional_repositories:
   https://mc-stan.org/r-packages/
 SystemRequirements: CmdStan (https://mc-stan.org/users/interfaces/cmdstan)

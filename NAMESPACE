@@ -27,4 +27,9 @@ importFrom(matrixStats,
 )
 importFrom(prettyunits,pretty_sec)
 importFrom(rstantools,posterior_predict)
+importFrom(stats,
+  predict,
+  setNames
+)
 importFrom(stringr,str_replace)
+importFrom(utils,head)

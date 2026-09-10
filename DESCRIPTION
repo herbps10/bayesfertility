@@ -1,14 +1,25 @@
 Package: bayesfertility
 Type: Package
-Title: Bayesian Fertility Models
+Title: Bayesian Peristera-Kostaki Models of Age-Specific Fertility
 Version: 0.0.1
-Author: You
-Maintainer: The package maintainer <yourself@somewhere.net>
-Description: Fit Bayesian Fertility Models with Stan
+Authors@R: person("Herb", "Susmann", email = "herbps10@gmail.com", role = c("aut", "cre"))
+Description: Fits hierarchical Bayesian Peristera-Kostaki models of
+    age-specific fertility rates using 'Stan'. Schedule parameters governing
+    the fertility curve can depend on covariates through parametric and
+    smooth (penalized) terms, with posterior inference via 'cmdstanr'.
+    Provides tools for prediction, posterior predictive checks, and deriving
+    quantities such as the total fertility rate.
 Depends:
   R (>= 4.0.0)
 Imports:
-  instantiate
+  bayesplot,
+  dplyr,
+  ggplot2,
+  instantiate,
+  matrixStats,
+  prettyunits,
+  rstantools,
+  stringr
 Additional_repositories:
   https://mc-stan.org/r-packages/
 SystemRequirements: CmdStan (https://mc-stan.org/users/interfaces/cmdstan)
@@ -17,3 +28,6 @@ LazyData: true
 License: MIT + file LICENSE
 Roxygen: list(markdown = TRUE)
 Config/roxygen2/version: 8.1.0
+Suggests: 
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3

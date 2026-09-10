@@ -121,6 +121,20 @@ summarize_curve_draws <- function(
 }
 
 
+#' Covariate names referenced by a model's schedule-parameter formulas
+#'
+#' @param object a `pk_fit` object
+#'
+#' @return character vector of covariate names appearing in any of the six
+#'   schedule-parameter formulas (`c1`, `c2`, `mu1`, `mu2`, `sigma1`,
+#'   `sigma2`), excluding `object$age_col`
+#' @noRd
+schedule_cell_vars <- function(object) {
+  param_names <- c("c1", "c2", "mu1", "mu2", "sigma1", "sigma2")
+  cell_vars <- unique(unlist(lapply(object$effects[param_names], all.vars)))
+  setdiff(cell_vars, object$age_col)
+}
+
 #' Deduplicate training data based on variables that appear in any of the effects formulas
 #'
 #' @param object a `pk_fit` object
@@ -131,7 +145,6 @@ summarize_curve_draws <- function(
 #' @importFrom dplyr distinct
 #' @noRd
 unique_cells <- function(object) {
-  cell_vars <- unique(unlist(lapply(object$effects, all.vars)))
-  cell_vars <- setdiff(cell_vars, object$age_col)
+  cell_vars <- schedule_cell_vars(object)
   dplyr::distinct(object$data[, cell_vars, drop = FALSE])
 }

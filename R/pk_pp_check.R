@@ -193,8 +193,7 @@ pp_check_ribbon <- function(
     .upper = matrixStats::colQuantiles(yrep_rates, probs = 1 - alpha)
   )
 
-  cell_vars <- unique(unlist(lapply(object$effects[1:6], all.vars)))
-  cell_vars <- setdiff(cell_vars, age_col)
+  cell_vars <- schedule_cell_vars(object)
   cell_data <- if (length(cell_vars) > 0) {
     dplyr::distinct(newdata[, cell_vars, drop = FALSE])
   } else {
@@ -216,81 +215,10 @@ pp_check_ribbon <- function(
     obs_summary[[group]] <- newdata[[group]]
   }
 
-  p <- ggplot2::ggplot()
-
-  if (!is.null(group)) {
-    p <- p +
-      ggplot2::geom_ribbon(
-        data = curve_df,
-        ggplot2::aes(
-          x = age,
-          ymin = .lower,
-          ymax = .upper
-          #fill = .data[[group]]
-        ),
-        fill = "#3F7EBA",
-        alpha = 0.2
-      ) +
-      ggplot2::geom_line(
-        data = curve_df,
-        ggplot2::aes(
-          x = age,
-          y = .fitted,
-          #color = .data[[group]]
-        ),
-        color = "#3F7EBA"
-      ) +
-      ggplot2::geom_errorbar(
-        data = obs_summary,
-        ggplot2::aes(
-          x = age,
-          ymin = .lower,
-          ymax = .upper,
-          #color = .data[[group]]
-        ),
-        width = 0,
-        alpha = 0.5
-      ) +
-      ggplot2::geom_point(
-        data = obs_summary,
-        ggplot2::aes(
-          x = age,
-          y = asfr,
-          #color = .data[[group]]
-        ),
-        size = 0.8
-      ) +
-      ggplot2::facet_wrap(stats::as.formula(paste("~", group)))
-  } else {
-    p <- p +
-      ggplot2::geom_ribbon(
-        data = curve_df,
-        ggplot2::aes(x = age, ymin = .lower, ymax = .upper),
-        alpha = 0.2,
-        fill = "#3F7EBA"
-      ) +
-      ggplot2::geom_line(
-        data = curve_df,
-        ggplot2::aes(x = age, y = .fitted),
-        color = "#3F7EBA"
-      ) +
-      ggplot2::geom_errorbar(
-        data = obs_summary,
-        ggplot2::aes(x = age, ymin = .lower, ymax = .upper),
-        width = 0,
-        alpha = 0.5
-      ) +
-      ggplot2::geom_point(
-        data = obs_summary,
-        ggplot2::aes(x = age, y = asfr)
-      )
-  }
-
-  p +
-    ggplot2::labs(
-      title = "Posterior predictive ribbon: ASFRs vs. observed",
-      x = "Age",
-      y = "Age-specific fertility rate"
-    ) +
-    ggplot2::theme_minimal()
+  plot_schedule_curve(
+    curve_df,
+    obs_df = obs_summary,
+    facet_vars = if (is.null(group)) character(0) else group,
+    title = "Posterior predictive ribbon: ASFRs vs. observed"
+  )
 }

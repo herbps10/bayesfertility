@@ -21,7 +21,7 @@ print.pk_fit <- function(x, ...) {
 
   # Effects spec
   cli::cli_h3("Effects specification")
-  param_names <- names(x$effects)
+  param_names <- c("c1", "c2", "mu1", "mu2", "sigma1", "sigma2")
   for (p in param_names) {
     formula_str <- deparse(x$effects[[p]], width.cutoff = 500L)
     formula_str <- str_replace(formula_str, "^~\\s*", "")

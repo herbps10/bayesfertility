@@ -4,18 +4,50 @@
 \alias{plot.pk_fit}
 \title{Plot a fitted PK model}
 \usage{
-\method{plot}{pk_fit}(x)
+\method{plot}{pk_fit}(
+  x,
+  newdata = NULL,
+  age_grid = NULL,
+  source = c("posterior", "prior"),
+  conf.level = 0.95,
+  ...
+)
 }
 \arguments{
 \item{x}{A fitted \code{pk_fit} object, as returned by \code{pk_fit()}.}
+
+\item{newdata}{A data frame giving the covariate values to facet over.
+Defaults to the training data (\code{x$data}) if \code{NULL}; only the columns
+referenced in \code{x$effects} are used, deduplicated to distinct
+combinations.}
+
+\item{age_grid}{Numeric vector of ages at which to evaluate the schedule;
+defaults to \code{seq(15, 49, by = 1)} (see \code{predict.pk_fit()}).}
+
+\item{source}{Whether to plot the \code{"posterior"} (default) or \code{"prior"}
+fitted schedule; \code{"prior"} requires the fit to have been created with
+\code{sample_prior = "yes"} or \code{"only"}.}
+
+\item{conf.level}{Credible interval width for the ribbon.}
+
+\item{...}{Additional arguments, currently unused.}
 }
 \value{
-\code{NULL}, invisibly.
+A \code{ggplot} object.
 }
 \description{
-Intended to visualize a fitted \code{pk_fit} object (e.g. its fertility
-schedule curve and/or posterior diagnostics). Not yet implemented --- this
-method is currently a placeholder with an empty body and returns \code{NULL}.
-Use \code{predict.pk_fit()} with \code{type = "schedule_curve"} together with
-\pkg{ggplot2} directly, or \code{pk_prior_posterior()}, in the meantime.
+Plots the fitted fertility schedule (age-specific fertility rate vs. age,
+with a credible ribbon) implied by a \code{pk_fit} object, via
+\code{predict.pk_fit(type = "schedule_curve")}. If the model's effects
+formulas reference any covariates, the plot is automatically faceted over
+the distinct covariate combinations found in the training data. For a
+comparison against observed data, see \code{pp_check(type = "ribbon")}
+instead.
+}
+\examples{
+\dontrun{
+plot(fit)
+plot(fit, source = "prior", conf.level = 0.8)
+}
+
 }

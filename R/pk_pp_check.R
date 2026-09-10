@@ -77,7 +77,7 @@ pp_check.pk_fit <- function(
     intervals = bayesplot::ppc_intervals(y_obs, yrep, ...),
     scatter_avg = bayesplot::ppc_scatter_avg(y_obs, yrep, ...),
     stat = pp_check_stat(y_obs, yrep, stat = stat, ...),
-    stat_grouped = pp_check_stat_grouped(y_obs, yrep, group, stat, ...),
+    stat_grouped = pp_check_stat_grouped(y_obs, yrep, newdata, group, stat, ...),
     ribbon = pp_check_ribbon(object, newdata, yrep, source, group, ...)
   )
 }
